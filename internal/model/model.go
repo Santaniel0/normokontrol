@@ -77,7 +77,7 @@ type Paragraph struct {
 	Font    FontUse   // the most used font and size
 	Fonts   []FontUse // every font and size of visible text, most used first
 	Heading int       // index of the governing heading, -1 before the first one
-	Ordinal int       // 1-based position among non-empty paragraphs under that heading
+	Ordinal int       // position among non-empty paragraphs under that heading (empty ones repeat the previous)
 }
 
 // Document is the classified document.
@@ -314,8 +314,9 @@ func (d *Document) number() {
 		p.Heading = heading
 		if p.Role != RoleEmpty {
 			ordinal++
-			p.Ordinal = ordinal
 		}
+		// An empty paragraph shares the ordinal of the text before it.
+		p.Ordinal = ordinal
 	}
 }
 
