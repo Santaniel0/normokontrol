@@ -43,6 +43,12 @@ func Run(ctx context.Context, paths []string, workers int, c Checker, emit func(
 		go func() {
 			defer wg.Done()
 			for i := range jobs {
+				// select may hand out a job even after cancellation; parsing a
+				// large file just to throw the result away is wasted work.
+				if err := ctx.Err(); err != nil {
+					results <- indexed{i, Outcome{Path: paths[i], Err: err}}
+					continue
+				}
 				res, err := c.CheckFile(ctx, paths[i])
 				results <- indexed{i, Outcome{Path: paths[i], Result: res, Err: err}}
 			}

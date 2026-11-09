@@ -122,6 +122,9 @@ const maxCommentsPerMessage = 20
 // Annotate writes a copy of the document with one Word comment per
 // affected paragraph and returns the number of comments.
 func (c *Checked) Annotate(w io.Writer, lines func(Item) []string) (int, error) {
+	if len(c.doc.Body.Paragraphs) == 0 {
+		return 0, fmt.Errorf("%w: document has no paragraphs", annotate.ErrUnsupported)
+	}
 	perMessage := map[string]int{}
 	byPara := map[int]*annotate.Note{}
 	var notes []*annotate.Note
@@ -131,10 +134,8 @@ func (c *Checked) Annotate(w io.Writer, lines func(Item) []string) (int, error) 
 			continue
 		}
 		perMessage[key]++
+		// Findings about the whole document hang on the first paragraph.
 		para := max(it.Para, 0)
-		if len(c.doc.Body.Paragraphs) == 0 {
-			break
-		}
 		n, ok := byPara[para]
 		if !ok {
 			n = &annotate.Note{Para: para}
