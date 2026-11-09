@@ -329,7 +329,7 @@ func Origin(o format.Origin) string {
 	case format.SourceCharacterStyle:
 		s = "стиль знака «" + StyleName(o.StyleName) + "»"
 	case format.SourceDirect:
-		return "прямое форматирование"
+		s = "прямое форматирование"
 	}
 	if o.Theme != 0 {
 		s += " → шрифт темы (" + o.Theme.String() + ")"

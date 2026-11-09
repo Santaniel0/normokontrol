@@ -2,6 +2,7 @@ package rules
 
 import (
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode"
@@ -112,20 +113,31 @@ func checkCitations(d *model.Document, _ *profile.Profile) []Finding {
 func checkCitationOrder(d *model.Document, _ *profile.Profile) []Finding {
 	var out []Finding
 	total := len(d.BibEntries())
+	cites := citations(d)
+	// Sources that are never cited are reported by refs.citations; they
+	// must not make every later citation look out of order.
+	var pending []int
+	ever := map[int]bool{}
+	for _, c := range cites {
+		for _, n := range c.nums {
+			if n <= total && !ever[n] {
+				ever[n] = true
+				pending = append(pending, n)
+			}
+		}
+	}
+	slices.Sort(pending)
 	seen := map[int]bool{}
-	lowest := 1 // smallest number not cited yet
-	for _, c := range citations(d) {
+	for _, c := range cites {
 		for _, n := range c.nums {
 			if seen[n] || n > total {
 				continue
 			}
 			seen[n] = true
-			if n > lowest {
+			if lowest := pending[0]; n > lowest {
 				out = append(out, finding(CitationOrder, SeverityWarning, c.para, msg.CitationOrder(n, lowest), ""))
 			}
-			for seen[lowest] {
-				lowest++
-			}
+			pending = slices.DeleteFunc(pending, func(v int) bool { return v == n })
 		}
 	}
 	return out

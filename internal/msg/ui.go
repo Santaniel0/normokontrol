@@ -179,3 +179,25 @@ var RuleTitles = map[string]string{
 	"refs.order":     "порядок источников по первым ссылкам (6.16)",
 	"text.homoglyph": "латинские буквы в русских словах и наоборот",
 }
+
+// Flag descriptions.
+const (
+	FlagProfile  = "профиль: имя встроенного или путь к .toml"
+	FlagFormat   = "формат отчёта: text или json"
+	FlagAnnotate = "сохранить копию документа с примечаниями Word"
+	FlagOut      = "папка для отчётов и копий с примечаниями"
+	FlagJobs     = "сколько файлов проверять одновременно"
+)
+
+// ErrBadFormat: unknown --format value.
+func ErrBadFormat(v string) string {
+	return fmt.Sprintf("неизвестный формат %q, нужен text или json", v)
+}
+
+// ErrNeedOneFile: check takes exactly one file.
+const ErrNeedOneFile = "укажите один файл .docx"
+
+// BuiltinProfiles lists the embedded profiles after an unknown name.
+func BuiltinProfiles(names []string) string {
+	return "встроенные профили: " + fmt.Sprint(names)
+}
