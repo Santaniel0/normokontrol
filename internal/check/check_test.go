@@ -15,6 +15,7 @@ import (
 	"github.com/Santaniel0/normokontrol/internal/profile"
 	"github.com/Santaniel0/normokontrol/internal/report"
 	"github.com/Santaniel0/normokontrol/internal/sample"
+	"github.com/Santaniel0/normokontrol/internal/zipx"
 )
 
 var update = flag.Bool("update", false, "rewrite golden reports in testdata")
@@ -44,6 +45,9 @@ func TestSamplesAreUpToDate(t *testing.T) {
 		}
 		if !bytes.Equal(got, want) {
 			t.Errorf("%s is stale: run go run ./cmd/mksample", name)
+		}
+		if err := zipx.Verify(got); err != nil {
+			t.Errorf("%s: %v", name, err)
 		}
 	}
 }
@@ -106,6 +110,9 @@ func TestBadSampleReport(t *testing.T) {
 	var out bytes.Buffer
 	n, err := c.Annotate(&out, report.CommentLines)
 	if err != nil {
+		t.Fatal(err)
+	}
+	if err := zipx.Verify(out.Bytes()); err != nil {
 		t.Fatal(err)
 	}
 	pkg, err := ooxml.Open(bytes.NewReader(out.Bytes()), int64(out.Len()), ooxml.DefaultLimits())

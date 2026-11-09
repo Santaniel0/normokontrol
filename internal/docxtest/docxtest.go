@@ -13,6 +13,8 @@ import (
 	"image/png"
 	"strings"
 	"time"
+
+	"github.com/Santaniel0/normokontrol/internal/zipx"
 )
 
 // Doc describes a package. Empty fields get Word-like defaults.
@@ -75,20 +77,16 @@ func Build(d Doc) ([]byte, error) {
 	zw := zip.NewWriter(&buf)
 	mod := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	for _, p := range parts {
-		w, err := zw.CreateHeader(&zip.FileHeader{Name: p.name, Method: zip.Deflate, Modified: mod})
-		if err != nil {
-			return nil, err
-		}
-		if _, err := w.Write([]byte(p.body)); err != nil {
+		if err := zipx.Write(zw, p.name, zip.Deflate, mod, []byte(p.body)); err != nil {
 			return nil, err
 		}
 	}
 	if d.Image {
-		w, err := zw.CreateHeader(&zip.FileHeader{Name: "word/media/image1.png", Method: zip.Store, Modified: mod})
-		if err != nil {
+		var img bytes.Buffer
+		if err := png.Encode(&img, picture()); err != nil {
 			return nil, err
 		}
-		if err := png.Encode(w, picture()); err != nil {
+		if err := zipx.Write(zw, "word/media/image1.png", zip.Store, mod, img.Bytes()); err != nil {
 			return nil, err
 		}
 	}
