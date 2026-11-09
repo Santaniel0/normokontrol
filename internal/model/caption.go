@@ -38,13 +38,13 @@ func ParseCaption(text string) (Caption, bool) {
 		return Caption{}, false
 	}
 	if m := continuationRe.FindStringSubmatch(text); m != nil {
-		return Caption{Kind: CaptionTable, Prefix: m[1], Number: m[2], Continuation: true}, true
+		return Caption{Kind: CaptionTable, Prefix: strings.ToUpper(m[1]), Number: m[2], Continuation: true}, true
 	}
 	m := captionRe.FindStringSubmatch(text)
 	if m == nil {
 		return Caption{}, false
 	}
-	c := Caption{Word: m[1], Prefix: m[2], Number: m[3], Kind: CaptionFigure}
+	c := Caption{Word: m[1], Prefix: strings.ToUpper(m[2]), Number: m[3], Kind: CaptionFigure}
 	if strings.HasPrefix(strings.ToLower(m[1]), "т") {
 		c.Kind = CaptionTable
 	}

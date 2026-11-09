@@ -6,6 +6,7 @@ package model
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -73,9 +74,10 @@ type Paragraph struct {
 	Bold    bool // every visible character is bold
 	Caption *Caption
 	Format  format.ResolvedPara
-	Font    FontUse
-	Heading int // index of the governing heading, -1 before the first one
-	Ordinal int // 1-based position among non-empty paragraphs under that heading
+	Font    FontUse   // the most used font and size
+	Fonts   []FontUse // every font and size of visible text, most used first
+	Heading int       // index of the governing heading, -1 before the first one
+	Ordinal int       // 1-based position among non-empty paragraphs under that heading
 }
 
 // Document is the classified document.
@@ -142,7 +144,10 @@ func Build(doc *ooxml.Document, opt Options) *Document {
 	for i, src := range doc.Body.Paragraphs {
 		p := &Paragraph{Index: i, Src: src, Text: src.Text(), Heading: -1}
 		p.Format = res.Paragraph(src.StyleID, src.Props)
-		p.Font, p.Bold = dominantFont(res, p.Format.StyleID, src)
+		p.Fonts, p.Bold = fontUses(res, p.Format.StyleID, src)
+		if len(p.Fonts) > 0 {
+			p.Font = p.Fonts[0]
+		}
 		p.Role, p.Level, p.Styled = classify(p, structural)
 		if src.Section < len(d.SectionStart) && d.SectionStart[src.Section] < 0 {
 			d.SectionStart[src.Section] = i
@@ -209,13 +214,12 @@ type fontKey struct {
 	size format.HalfPoints
 }
 
-// dominantFont picks the font and size covering most visible characters.
+// fontUses lists the fonts and sizes of visible characters, most used first.
 // Word draws Cyrillic with the w:hAnsi font and plain ASCII with w:ascii, so
-// the slot is chosen per run.
-func dominantFont(res *format.Resolver, paraStyle format.StyleID, src *ooxml.Paragraph) (FontUse, bool) {
-	counts := map[fontKey]*FontUse{}
-	var best *FontUse
-	allBold, seen := true, false
+// the slot is chosen per run. bold reports whether every visible run is bold.
+func fontUses(res *format.Resolver, paraStyle format.StyleID, src *ooxml.Paragraph) (uses []FontUse, bold bool) {
+	index := map[fontKey]int{}
+	bold = true
 	for _, r := range src.Runs {
 		n := letters(r.Text)
 		if n == 0 {
@@ -230,22 +234,17 @@ func dominantFont(res *format.Resolver, paraStyle format.StyleID, src *ooxml.Par
 			}
 		}
 		k := fontKey{font.Val, rr.Size.Val}
-		u, ok := counts[k]
+		i, ok := index[k]
 		if !ok {
-			u = &FontUse{Name: font, Size: rr.Size}
-			counts[k] = u
+			i = len(uses)
+			index[k] = i
+			uses = append(uses, FontUse{Name: font, Size: rr.Size})
 		}
-		u.Chars += n
-		if best == nil || u.Chars > best.Chars {
-			best = u
-		}
-		seen = true
-		allBold = allBold && rr.Bold.Val
+		uses[i].Chars += n
+		bold = bold && rr.Bold.Val
 	}
-	if best == nil {
-		return FontUse{}, false
-	}
-	return *best, seen && allBold
+	sort.SliceStable(uses, func(i, j int) bool { return uses[i].Chars > uses[j].Chars })
+	return uses, bold && len(uses) > 0
 }
 
 func (d *Document) markCaptions() {
