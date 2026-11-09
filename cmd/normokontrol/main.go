@@ -407,6 +407,8 @@ func explain(err error) string {
 		return msg.ErrAnnotate
 	case errors.Is(err, fs.ErrNotExist):
 		return msg.ErrNotFound
+	case errors.Is(err, context.Canceled):
+		return msg.ErrCanceled
 	}
 	return err.Error()
 }

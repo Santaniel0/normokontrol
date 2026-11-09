@@ -102,6 +102,7 @@ const (
 	ErrBaseCycle      = "профили ссылаются друг на друга по кругу (параметр base)"
 	ErrAnnotate       = "не удалось вставить примечания в этот документ, отчёт выше остаётся верным"
 	ErrUnknownProfile = "профиль не найден"
+	ErrCanceled       = "проверка прервана"
 )
 
 // ErrProfileKey explains a bad key in a profile.

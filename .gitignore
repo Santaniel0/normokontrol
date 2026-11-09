@@ -2,4 +2,3 @@
 /normokontrol.exe
 /dist/
 *.проверено.docx
-!testdata/*.проверено.docx
