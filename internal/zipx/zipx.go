@@ -59,6 +59,7 @@ func Write(zw *zip.Writer, name string, method uint16, mod time.Time, data []byt
 		ReaderVersion:  zipVersion20,
 	}
 	// CreateRaw does not derive the MS-DOS time from Modified either.
+	//lint:ignore SA1019 the raw header fields are the only way to set the time for CreateRaw.
 	hdr.ModifiedDate, hdr.ModifiedTime = dosTime(mod)
 	w, err := zw.CreateRaw(hdr)
 	if err != nil {
