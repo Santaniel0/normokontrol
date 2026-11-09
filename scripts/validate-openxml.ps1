@@ -3,10 +3,13 @@ Validates the samples and an annotated copy against the Office 2019 schemas
 with Microsoft's Open XML SDK (DocumentFormat.OpenXml 3.5.1, net46 build,
 loaded into Windows PowerShell 5.1). Exits 1 if any schema error is found.
 
-    powershell -ExecutionPolicy Bypass -File scripts\validate-openxml.ps1
+    powershell -ExecutionPolicy Bypass -File scripts\validate-openxml.ps1 -Sdk path\to\sdk
+
+-Sdk is a folder with the two NuGet packages from nuget.org unzipped side by
+side: documentformat.openxml.3.5.1\ and documentformat.openxml.framework.3.5.1\.
 #>
 param(
-    [string]$Sdk = (Join-Path $env:LOCALAPPDATA 'Programs\_downloads\openxml\x'),
+    [Parameter(Mandatory = $true)][string]$Sdk,
     [string]$Work = (Join-Path ([IO.Path]::GetTempPath()) ('normokontrol-oxml-' + [guid]::NewGuid().ToString('N')))
 )
 $ErrorActionPreference = 'Stop'

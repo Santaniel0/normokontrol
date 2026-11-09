@@ -301,13 +301,16 @@ go test ./internal/check -update          # обновить эталонный 
 
 ```
 powershell -ExecutionPolicy Bypass -File scripts\verify-libreoffice.ps1
-powershell -ExecutionPolicy Bypass -File scripts\validate-openxml.ps1
+powershell -ExecutionPolicy Bypass -File scripts\validate-openxml.ps1 -Sdk C:\tools\openxml
 ```
 
 Первая конвертирует оба образца и копию с примечаниями в ODT через LibreOffice
 и сверяет число примечаний Word с числом `office:annotation` в результате.
-Вторая проверяет те же файлы валидатором Open XML SDK по схемам Office 2019.
-Пути к LibreOffice и SDK задаются параметрами `-Soffice` и `-Sdk`.
+По умолчанию она ищет LibreOffice в `C:\Program Files\LibreOffice`, другой путь
+задаётся параметром `-Soffice`. Вторая проверяет те же файлы валидатором
+Open XML SDK по схемам Office 2019. В `-Sdk` нужна папка, куда распакованы два
+пакета с nuget.org: `DocumentFormat.OpenXml` и `DocumentFormat.OpenXml.Framework`
+версии 3.5.1.
 
 Тесты собирают небольшие .docx прямо в коде (`internal/docxtest`) и проверяют
 каждый уровень каскада стилей, распознавание ролей, каждое правило, а также что

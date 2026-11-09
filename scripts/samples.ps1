@@ -6,9 +6,7 @@
 function New-SampleSet([string]$Work) {
     $root = Split-Path -Parent $PSScriptRoot
     New-Item -ItemType Directory -Force $Work | Out-Null
-    if (-not (Get-Command go -ErrorAction SilentlyContinue)) {
-        $env:PATH = (Join-Path $env:LOCALAPPDATA 'Programs\go\bin') + ';' + $env:PATH
-    }
+    if (-not (Get-Command go -ErrorAction SilentlyContinue)) { throw 'go is not in PATH' }
     $exe = Join-Path $Work 'normokontrol.exe'
     Push-Location $root
     try {

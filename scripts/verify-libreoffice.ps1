@@ -3,10 +3,10 @@ Converts the samples and an annotated copy to ODT with LibreOffice and checks
 that every Word comment normokontrol wrote arrives as an office:annotation.
 Not part of go test: CI has no LibreOffice.
 
-    powershell -ExecutionPolicy Bypass -File scripts\verify-libreoffice.ps1
+    powershell -ExecutionPolicy Bypass -File scripts\verify-libreoffice.ps1 [-Soffice path\to\soffice.com]
 #>
 param(
-    [string]$Soffice = (Join-Path $env:LOCALAPPDATA 'Programs\LibreOffice-portable\SourceDir\LibreOffice\program\soffice.com'),
+    [string]$Soffice = 'C:\Program Files\LibreOffice\program\soffice.com',
     [string]$Work = (Join-Path ([IO.Path]::GetTempPath()) ('normokontrol-lo-' + [guid]::NewGuid().ToString('N')))
 )
 $ErrorActionPreference = 'Stop'
