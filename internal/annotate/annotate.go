@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/Santaniel0/normokontrol/internal/ooxml"
+	"github.com/Santaniel0/normokontrol/internal/zipx"
 )
 
 // ErrUnsupported means the document uses XML the splicer cannot handle
@@ -295,7 +296,8 @@ func relTarget(source, target string) (string, error) {
 }
 
 // writeZip copies the package in its original entry order. Untouched
-// entries are copied raw, so their compressed bytes stay identical.
+// entries are copied raw, so their compressed bytes stay identical; zipx
+// keeps CRC and sizes in the local headers, which LibreOffice requires.
 func writeZip(w io.Writer, pkg *ooxml.Package, replaced map[string][]byte, added []string) error {
 	zw := zip.NewWriter(w)
 	isAdded := map[string]bool{}
@@ -305,22 +307,13 @@ func writeZip(w io.Writer, pkg *ooxml.Package, replaced map[string][]byte, added
 	for _, f := range pkg.Files() {
 		name := strings.TrimPrefix(f.Name, "/")
 		if data, ok := replaced[name]; ok && !isAdded[name] {
-			if err := writeEntry(zw, f.Name, f.Modified, data); err != nil {
+			if err := zipx.Write(zw, f.Name, zip.Deflate, f.Modified, data); err != nil {
 				return err
 			}
 			continue
 		}
-		hdr := f.FileHeader
-		dst, err := zw.CreateRaw(&hdr)
-		if err != nil {
-			return fmt.Errorf("copy %s: %w", f.Name, err)
-		}
-		src, err := f.OpenRaw()
-		if err != nil {
-			return fmt.Errorf("copy %s: %w", f.Name, err)
-		}
-		if _, err := io.Copy(dst, src); err != nil {
-			return fmt.Errorf("copy %s: %w", f.Name, err)
+		if err := zipx.Copy(zw, f); err != nil {
+			return err
 		}
 	}
 	// New parts take the timestamp of the first entry so that the output
@@ -330,18 +323,9 @@ func writeZip(w io.Writer, pkg *ooxml.Package, replaced map[string][]byte, added
 		mod = files[0].Modified
 	}
 	for _, name := range added {
-		if err := writeEntry(zw, name, mod, replaced[name]); err != nil {
+		if err := zipx.Write(zw, name, zip.Deflate, mod, replaced[name]); err != nil {
 			return err
 		}
 	}
 	return zw.Close()
-}
-
-func writeEntry(zw *zip.Writer, name string, mod time.Time, data []byte) error {
-	dst, err := zw.CreateHeader(&zip.FileHeader{Name: name, Method: zip.Deflate, Modified: mod})
-	if err != nil {
-		return fmt.Errorf("write %s: %w", name, err)
-	}
-	_, err = dst.Write(data)
-	return err
 }

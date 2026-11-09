@@ -10,6 +10,7 @@ import (
 
 	"github.com/Santaniel0/normokontrol/internal/docxtest"
 	"github.com/Santaniel0/normokontrol/internal/ooxml"
+	"github.com/Santaniel0/normokontrol/internal/zipx"
 )
 
 func open(t *testing.T, data []byte) *ooxml.Document {
@@ -127,6 +128,9 @@ func TestRoundTripKeepsExistingComments(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if err := zipx.Verify(out.Bytes()); err != nil {
+		t.Fatal(err)
+	}
 	got := open(t, out.Bytes())
 	if len(got.Body.Paragraphs) != len(doc.Body.Paragraphs) {
 		t.Fatalf("paragraphs: %d, want %d", len(got.Body.Paragraphs), len(doc.Body.Paragraphs))
@@ -171,13 +175,51 @@ func TestRoundTripKeepsExistingComments(t *testing.T) {
 	}
 }
 
-func TestAddsCommentsPart(t *testing.T) {
-	src, err := docxtest.Build(docxtest.Doc{Body: docxtest.P("", docxtest.T("Текст"))})
+// withDescriptors repacks a package the way archive/zip's streaming writer
+// and many other tools do: every entry followed by a data descriptor.
+func withDescriptors(t *testing.T, data []byte) []byte {
+	t.Helper()
+	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		t.Fatal(err)
 	}
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	for _, f := range zr.File {
+		rc, err := f.Open()
+		if err != nil {
+			t.Fatal(err)
+		}
+		w, err := zw.CreateHeader(&zip.FileHeader{Name: f.Name, Method: f.Method})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := io.Copy(w, rc); err != nil {
+			t.Fatal(err)
+		}
+		rc.Close()
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return buf.Bytes()
+}
+
+func TestAddsCommentsPart(t *testing.T) {
+	built, err := docxtest.Build(docxtest.Doc{Body: docxtest.P("", docxtest.T("Текст")), Image: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := withDescriptors(t, built)
+	if zipx.Verify(src) == nil {
+		t.Fatal("test input should use data descriptors")
+	}
 	var out bytes.Buffer
 	if err := Write(&out, open(t, src), []Note{{Para: 0, Lines: []string{"замечание"}}}, Options{Author: "a"}); err != nil {
+		t.Fatal(err)
+	}
+	// Copied entries must lose the descriptor of the source.
+	if err := zipx.Verify(out.Bytes()); err != nil {
 		t.Fatal(err)
 	}
 	got := open(t, out.Bytes())
