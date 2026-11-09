@@ -20,7 +20,10 @@ import (
 	"time"
 )
 
-const flagDataDescriptor = 0x8
+const (
+	flagDataDescriptor = 0x8
+	zipVersion20       = 20
+)
 
 // Write adds an entry with method zip.Store or zip.Deflate.
 func Write(zw *zip.Writer, name string, method uint16, mod time.Time, data []byte) error {
@@ -49,9 +52,13 @@ func Write(zw *zip.Writer, name string, method uint16, mod time.Time, data []byt
 		CRC32:              crc32.ChecksumIEEE(data),
 		CompressedSize64:   uint64(len(body)),
 		UncompressedSize64: uint64(len(data)),
+		// CreateRaw, unlike CreateHeader, leaves the version fields at 0,
+		// and .NET's System.IO.Packaging rejects such entries as
+		// "unsupported data structures". 2.0 is what deflate requires.
+		CreatorVersion: zipVersion20,
+		ReaderVersion:  zipVersion20,
 	}
-	// CreateRaw does not derive the MS-DOS time from Modified the way
-	// CreateHeader does, so it is filled in here.
+	// CreateRaw does not derive the MS-DOS time from Modified either.
 	hdr.ModifiedDate, hdr.ModifiedTime = dosTime(mod)
 	w, err := zw.CreateRaw(hdr)
 	if err != nil {
@@ -89,9 +96,10 @@ func dosTime(t time.Time) (date, clock uint16) {
 }
 
 // Verify walks the local file headers of an archive written by this
-// package and checks that none uses a data descriptor and that every local
-// header agrees with the central directory on CRC and sizes. Stored entries
-// must have equal compressed and uncompressed sizes.
+// package and checks that none uses a data descriptor, that the version
+// needed to extract is set, and that every local header agrees with the
+// central directory on CRC and sizes. Stored entries must have equal
+// compressed and uncompressed sizes.
 func Verify(data []byte) error {
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
@@ -104,13 +112,15 @@ func Verify(data []byte) error {
 		if off+30 > len(data) || le32(off) != 0x04034b50 {
 			return fmt.Errorf("%s: no local file header at offset %d", f.Name, off)
 		}
-		flags, method := le16(off+6), le16(off+8)
+		version, flags, method := le16(off+4), le16(off+6), le16(off+8)
 		crc, csize, usize := le32(off+14), le32(off+18), le32(off+22)
 		nameLen, extraLen := le16(off+26), le16(off+28)
 		if off+30+nameLen > len(data) || string(data[off+30:off+30+nameLen]) != f.Name {
 			return fmt.Errorf("%s: local header name does not match the central directory", f.Name)
 		}
 		switch {
+		case version < 10 || f.ReaderVersion < 10:
+			return fmt.Errorf("%s: version needed to extract is %d", f.Name, version)
 		case flags&flagDataDescriptor != 0:
 			return fmt.Errorf("%s: data descriptor flag is set", f.Name)
 		case crc != f.CRC32 || uint64(csize) != f.CompressedSize64 || uint64(usize) != f.UncompressedSize64:
