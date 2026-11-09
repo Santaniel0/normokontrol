@@ -126,7 +126,8 @@ func (e env) checkOne(ctx context.Context, path string, p *profile.Profile, form
 		e.fail(path, err)
 		return exitFailure
 	}
-	if ann {
+	// A clean document needs no commented copy.
+	if ann && len(c.Result.Findings) > 0 {
 		out := annotatedPath(path, "")
 		n, err := writeAnnotated(c, out)
 		if err != nil {
@@ -279,7 +280,7 @@ func (f *fileChecker) CheckFile(ctx context.Context, path string) (check.Result,
 			return c.Result, err
 		}
 	}
-	if f.annotate {
+	if f.annotate && len(c.Result.Findings) > 0 {
 		if _, err := writeAnnotated(c, annotatedPath(path, f.out)); err != nil {
 			return c.Result, err
 		}

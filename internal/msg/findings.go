@@ -290,9 +290,6 @@ func plural(n int, one, few, many string) string {
 	return many
 }
 
-// Plural is exported for the report.
-func Plural(n int, one, few, many string) string { return plural(n, one, few, many) }
-
 var builtinStyleNames = map[string]string{
 	"normal": "Обычный", "caption": "Название объекта", "title": "Заголовок",
 	"list paragraph": "Абзац списка", "body text": "Основной текст",

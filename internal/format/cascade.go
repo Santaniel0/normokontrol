@@ -114,12 +114,6 @@ func defaultStyleID(sheet StyleSheet, t StyleType) StyleID {
 	return ids[0]
 }
 
-// Style returns a style by id.
-func (r *Resolver) Style(id StyleID) (Style, bool) {
-	st, ok := r.sheet.Styles[id]
-	return st, ok
-}
-
 // chain returns the style followed by its basedOn ancestors, root first.
 // Cycles and dangling basedOn references simply end the chain.
 func (r *Resolver) chain(id StyleID, t StyleType) []Style {

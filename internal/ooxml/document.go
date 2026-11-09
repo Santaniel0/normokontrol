@@ -13,11 +13,11 @@ import (
 
 // Section is a w:sectPr: page geometry for the paragraphs before it.
 type Section struct {
-	PageWidth, PageHeight    format.Twips
-	MarginTop, MarginBottom  format.Twips
-	MarginLeft, MarginRight  format.Twips
-	HasPageSize, HasMargins  bool
-	Landscape, TitlePageDiff bool
+	PageWidth, PageHeight   format.Twips
+	MarginTop, MarginBottom format.Twips
+	MarginLeft, MarginRight format.Twips
+	HasPageSize, HasMargins bool
+	Landscape               bool
 }
 
 // Span locates a paragraph inside the raw document.xml so that comments can
@@ -286,8 +286,6 @@ func readSectPr(d *xml.Decoder) (Section, error) {
 						return s, err
 					}
 					s.HasMargins = true
-				case "titlePg":
-					s.TitlePageDiff = onOff(t)
 				}
 			}
 			if err := d.Skip(); err != nil {
