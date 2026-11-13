@@ -1,5 +1,7 @@
 # normokontrol
 
+[![CI](https://github.com/Santaniel0/normokontrol/actions/workflows/ci.yml/badge.svg)](https://github.com/Santaniel0/normokontrol/actions/workflows/ci.yml)
+
 Проверка оформления курсовых, отчётов по практике и ВКР в формате .docx по
 ГОСТ 7.32-2017 или по методичке конкретного вуза. Программа работает
 локально, без интернета, и поставляется одним исполняемым файлом.
@@ -30,6 +32,8 @@ normokontrol вычисляет итоговое оформление каждо
 Word прямо на проблемных абзацах.
 
 ## Установка
+
+Готовый файл для Windows (`normokontrol_<версия>_windows_amd64.exe`) и сборки для Linux и macOS лежат на странице [Releases](https://github.com/Santaniel0/normokontrol/releases/latest). Go для них не нужен: файл работы можно сразу перетащить на .exe. Собрать самому через Go:
 
 Нужен Go 1.27 или новее.
 
