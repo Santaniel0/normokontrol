@@ -133,6 +133,7 @@ const Usage = `normokontrol — проверка оформления курсо
   normokontrol batch [--profile П] [--out ПАПКА] [--jobs N] [--annotate] ПАПКА|ФАЙЛЫ...
   normokontrol profile [ИМЯ]     показать профиль с комментариями
   normokontrol rules             список правил
+  normokontrol version           версия программы
 
 Профиль ищется так: --profile, затем normokontrol.toml рядом с программой,
 затем встроенный gost-7.32-2017.

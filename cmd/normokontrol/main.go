@@ -14,6 +14,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"strings"
 
 	"github.com/Santaniel0/normokontrol/internal/annotate"
@@ -34,6 +35,22 @@ const (
 
 // annotatedSuffix marks copies with comments; batch skips such files.
 const annotatedSuffix = ".проверено.docx"
+
+// version is set by the release build with -ldflags "-X main.version=...".
+var version string
+
+// buildVersion falls back to the module version the go command records:
+// "go install ...@v0.1.1" reports v0.1.1, and go build in a git checkout
+// reports a pseudo-version derived from the nearest tag.
+func buildVersion() string {
+	if version != "" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	return "dev"
+}
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -67,6 +84,9 @@ func run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		return exitOK
 	case "help", "-h", "--help":
 		fmt.Fprintln(stdout, msg.Usage)
+		return exitOK
+	case "version", "--version":
+		fmt.Fprintln(stdout, "normokontrol", buildVersion())
 		return exitOK
 	}
 	if st, err := os.Stat(args[0]); len(args) == 1 && err == nil && !st.IsDir() {

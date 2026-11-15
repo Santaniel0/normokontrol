@@ -125,3 +125,20 @@ func TestProfileAndRules(t *testing.T) {
 		t.Errorf("unknown rule: %d %s", code, errOut)
 	}
 }
+
+func TestVersion(t *testing.T) {
+	// Without ldflags the result depends on how the binary was built
+	// (VCS stamping, go install), so only its shape is checked here.
+	code, out, _ := runCLI(t, "", "version")
+	if code != exitOK || !strings.HasPrefix(out, "normokontrol ") || strings.TrimSpace(out) == "normokontrol" {
+		t.Errorf("without ldflags: %d %q", code, out)
+	}
+
+	saved := version
+	version = "v9.9.9"
+	t.Cleanup(func() { version = saved })
+	code, out, _ = runCLI(t, "", "--version")
+	if code != exitOK || out != "normokontrol v9.9.9\n" {
+		t.Errorf("with ldflags: %d %q", code, out)
+	}
+}
