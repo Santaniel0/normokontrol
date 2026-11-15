@@ -27,7 +27,7 @@ jobs:
             arch=${target#*/}
             ext=""
             if [ "$os" = windows ]; then ext=".exe"; fi
-            GOOS=$os GOARCH=$arch go build -trimpath -ldflags "-s -w" \
+            GOOS=$os GOARCH=$arch go build -trimpath -ldflags "-s -w -X main.version=${GITHUB_REF_NAME}" \
               -o "dist/normokontrol_${GITHUB_REF_NAME}_${os}_${arch}${ext}" ./cmd/normokontrol
           done
           cd dist && sha256sum * > checksums.txt
